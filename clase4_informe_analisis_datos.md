@@ -2,7 +2,7 @@
 
 ## 1. Objetivo
 
-El presente informe documenta los principales hallazgos identificados en el archivo [Primer análisis: informe de calidad de datos](./clase4_informe_analisis_datos.md)
+El presente informe documenta los principales hallazgos identificados en el archivo [Primer análisis: informe de calidad de datos](./datos_ventas_para_auditoria.csv)
 .
 
 El análisis se enfocó en revisar la consistencia, integridad y coherencia general de los registros, sin aplicar procesos de limpieza, transformación o corrección. Por lo tanto, los resultados reflejan el estado original de los datos recibidos.
