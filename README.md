@@ -127,3 +127,22 @@ El archivo `.gitignore` contiene las reglas para evitar subir al repositorio:
 - Carpetas de caché.
 - Archivos con variables de entorno.
 - Configuraciones específicas de editores.
+
+## Aplicación interactiva con Streamlit
+
+Como futura etapa del proyecto, se prevé incorporar una aplicación interactiva desarrollada con Streamlit. El objetivo será visualizar los resultados del análisis de calidad de datos mediante métricas, tablas, gráficos y filtros dinámicos.
+
+La aplicación permitirá consultar de forma más visual algunos de los principales hallazgos, como:
+
+- Cantidad total de registros.
+- Identificadores duplicados.
+- Valores faltantes.
+- Categorías no autorizadas.
+- Métodos de pago registrados.
+- Valores atípicos en cantidades y precios.
+- Estado de auditoría de las transacciones.
+
+La aplicación se ejecutará localmente mediante el siguiente comando:
+
+```bash
+streamlit run app.py
