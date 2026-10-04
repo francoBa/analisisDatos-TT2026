@@ -19,7 +19,7 @@ st.write("Proyecto académico desarrollado durante Talento Tech 2026.")
 # Lectura del archivo
 df = pd.read_csv(ARCHIVO, keep_default_na=False)
 
-# Conversión temporal para el análisis
+# Conversión temporal para el análisis (Series de Pandas)
 cantidad = pd.to_numeric(df["Cantidad"], errors="coerce")
 
 precio = pd.to_numeric(
@@ -180,19 +180,21 @@ col4.metric(
 )
 
 # Pestañas del análisis
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab_almacen, tab_etapa2 = st.tabs(
     [
         "Vista de datos",
         "Fechas",
         "Valores faltantes",
         "Categorías y pagos",
         "Valores atípicos",
+        "Pre Entrega - Carga",
+        "Pre Entrega - Resultados (Etapa 2)"
     ]
 )
 
 with tab1:
     st.subheader("Datos filtrados")
-    st.dataframe(df_filtrado, use_container_width=True)
+    st.dataframe(df_filtrado, width="stretch")
 
 with tab2:
     st.subheader("Hallazgos en fechas")
@@ -212,7 +214,7 @@ with tab2:
         }
     )
 
-    st.dataframe(fechas_df, hide_index=True, use_container_width=True)
+    st.dataframe(fechas_df, hide_index=True, width="stretch")
     st.bar_chart(fechas_df.set_index("Tipo de hallazgo"))
 
 with tab3:
@@ -225,7 +227,7 @@ with tab3:
         .rename(columns={"index": "Columna"})
     )
 
-    st.dataframe(faltantes_df, hide_index=True, use_container_width=True)
+    st.dataframe(faltantes_df, hide_index=True, width="stretch")
     st.bar_chart(faltantes_df.set_index("Columna"))
 
 with tab4:
@@ -238,7 +240,7 @@ with tab4:
         st.dataframe(
             categorias.rename("Cantidad").reset_index(),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
     with col2:
@@ -248,7 +250,7 @@ with tab4:
         st.dataframe(
             metodos_pago.rename("Cantidad").reset_index(),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
 with tab5:
@@ -271,13 +273,123 @@ with tab5:
         }
     )
 
-    st.dataframe(atipicos_df, hide_index=True, use_container_width=True)
+    st.dataframe(atipicos_df, hide_index=True, width="stretch")
     st.bar_chart(atipicos_df.set_index("Tipo de hallazgo"))
 
     st.write(
         f"El límite superior calculado mediante IQR para la columna "
         f"`Cantidad` es: **{limite_superior:.2f}**."
     )
+
+with tab_almacen:
+    st.subheader("Programa de Registro y Almacenamiento de Ventas")
+    st.markdown("**Estructura utilizada:** Lista de Diccionarios (`list[dict]`) en `st.session_state`.")
+
+    # Inicializar la lista en memoria si no existe
+    if "almacen_ventas" not in st.session_state:
+        st.session_state.almacen_ventas = []
+
+    # Formulario interactivo para almacenar datos (variables renombradas para evitar colisión)
+    with st.form("form_nueva_venta", clear_on_submit=True):
+        col_p, col_pr, col_c = st.columns(3)
+        input_prod = col_p.text_input("Producto")
+        input_prec = col_pr.number_input("Precio ($)", min_value=0.01, step=1.0)
+        input_cant = col_c.number_input("Cantidad", min_value=1, step=1)
+
+        btn_guardar = st.form_submit_button("Almacenar Venta")
+
+        if btn_guardar:
+            if input_prod.strip():
+                # Se almacena en la estructura elegida
+                nueva_venta = {
+                    "producto": input_prod.strip(),
+                    "precio": float(input_prec),
+                    "cantidad": int(input_cant),
+                }
+                st.session_state.almacen_ventas.append(nueva_venta)
+                st.success(f"Venta de '{input_prod}' almacenada con éxito.")
+            else:
+                st.error("El nombre del producto no puede estar vacío.")
+
+    # Mostrar la estructura almacenada
+    if st.session_state.almacen_ventas:
+        df_almacen = pd.DataFrame(st.session_state.almacen_ventas)
+        df_almacen["Subtotal"] = df_almacen["precio"] * df_almacen["cantidad"]
+        st.dataframe(df_almacen, width="stretch")
+        st.metric("Total Almacenado", f"${df_almacen['Subtotal'].sum():,.2f}")
+
+
+with tab_etapa2:
+    st.subheader("Resultados Consolidados: Preprocesamiento e Integración")
+    st.markdown("Consolidación analítica de la **Etapa 2** sobre los datasets `ventas.csv` y `marketing.csv`.")
+
+    ruta_v = Path(__file__).parent / "files" / "ventas.csv"
+    ruta_m = Path(__file__).parent / "files" / "marketing.csv"
+
+    if ruta_v.exists() and ruta_m.exists():
+        # Carga y limpieza directa para la vista ejecutiva
+        v_df = pd.read_csv(ruta_v).drop_duplicates().dropna(subset=["precio", "cantidad"])
+        v_df["precio"] = v_df["precio"].astype(str).str.replace("$", "", regex=False).str.strip().astype(float)
+        v_df["cantidad"] = v_df["cantidad"].astype(int)
+        v_df["ingreso_total"] = v_df["precio"] * v_df["cantidad"]
+
+        m_df = pd.read_csv(ruta_m)
+
+        # 1. Métricas de impacto de la limpieza
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Transacciones Depuradas", f"{len(v_df):,}", "35 duplicados y 2 nulos removidos")
+        m2.metric("Facturación Neta Total", f"$ {v_df['ingreso_total'].sum():,.2f}")
+        m3.metric("Unidades Totales Vendidas", f"{v_df['cantidad'].sum():,} uds")
+
+        st.divider()
+
+        # 2. Gráfico y tabla: Ventas por Categoría
+        st.subheader("1. Ventas por Categoría de Producto")
+        cat_df = v_df.groupby("categoria")["ingreso_total"].sum().reset_index()
+        cat_df.columns = ["Categoría", "Ingresos Totales ($)"]
+
+        col_g1, col_g2 = st.columns([3, 2])
+        with col_g1:
+            st.bar_chart(cat_df.set_index("Categoría"), color="#29b5e8", width="stretch")
+        with col_g2:
+            st.dataframe(cat_df, width="stretch", hide_index=True)
+
+        st.divider()
+
+        # 3. Productos de Alto Rendimiento
+        st.subheader("2. Productos de Alto Rendimiento (Por encima de la media)")
+        prod_df = v_df.groupby("producto").agg(
+            ingreso_total=("ingreso_total", "sum"),
+            unidades=("cantidad", "sum"),
+            operaciones=("id_venta", "count")
+        ).reset_index()
+
+        umbral = prod_df["ingreso_total"].mean()
+        alto_rendimiento = prod_df[prod_df["ingreso_total"] > umbral].sort_values(by="ingreso_total", ascending=False)
+        st.caption(f"Umbral de corte (media de facturación por producto): **${umbral:,.2f}**")
+        st.dataframe(alto_rendimiento, width="stretch", hide_index=True)
+
+        st.divider()
+
+        # 4. Integración: Ventas vs Marketing (ROAS)
+        st.subheader("3. Integración Comercial vs. Inversión en Marketing")
+        mkt_prod = m_df.groupby("producto").agg(
+            costo_marketing=("costo", "sum"),
+            canales=("canal", lambda x: ", ".join(sorted(x.unique())))
+        ).reset_index()
+
+        integrado = pd.merge(prod_df, mkt_prod, on="producto", how="inner")
+        integrado["retorno_por_peso"] = integrado["ingreso_total"] / integrado["costo_marketing"]
+        integrado = integrado.sort_values(by="retorno_por_peso", ascending=False)
+
+        st.dataframe(
+            integrado[["producto", "canales", "ingreso_total", "costo_marketing", "retorno_por_peso"]],
+            width="stretch",
+            hide_index=True
+        )
+    else:
+        st.warning("No se encontraron los archivos en la carpeta `files/`. Verifica que existan `files/ventas.csv` y `files/marketing.csv`.")
+
 
 # Resumen de auditoría
 st.subheader("Estatus de auditoría")
@@ -288,7 +400,7 @@ st.bar_chart(auditoria)
 st.dataframe(
     auditoria.rename("Cantidad").reset_index(),
     hide_index=True,
-    use_container_width=True,
+    width="stretch",
 )
 
 if len(auditoria) == 1 and auditoria.index[0] == "Aprobado":
@@ -307,7 +419,7 @@ duplicados = df[
 if duplicados.empty:
     st.success("No se encontraron identificadores duplicados.")
 else:
-    st.dataframe(duplicados, hide_index=True, use_container_width=True)
+    st.dataframe(duplicados, hide_index=True, width="stretch")
     st.info(
         f"Se encontraron {ids_repetidos} identificador(es) repetido(s) "
         f"y {ids_duplicados} registro(s) involucrado(s)."

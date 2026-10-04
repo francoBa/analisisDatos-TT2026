@@ -1,148 +1,103 @@
-# Análisis de datos
+# Análisis de Datos - Talento Tech 2026
 
-Repositorio correspondiente a los ejercicios y análisis realizados durante el curso de análisis de datos.
+[![Validar y Ejecutar Notebook](https://github.com/francoBa/analisisDatos-TT2026/actions/workflows/test_notebook.yml/badge.svg)](https://github.com/francoBa/analisisDatos-TT2026/actions/workflows/test_notebook.yml)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/francoBa/analisisDatos-TT2026/blob/main/pre_entrega.ipynb)
 
-## Estructura del proyecto
+Repositorio correspondiente a los proyectos, auditorías y ejercicios prácticos desarrollados durante el curso de **Análisis de Datos**.
 
-La estructura actual del proyecto incluye los informes, los datos utilizados, el script de análisis y los archivos de configuración necesarios:
+> **Acceso directo:** Haz clic en el botón superior **"Open In Colab"** para ejecutar interactivamente el cuaderno principal en Google Colaboratory.
 
-~~~text
+---
+
+## Estructura del Proyecto
+
+```text
 .
+├── .github/
+│   └── workflows/
+│       └── test_notebook.yml             # Pipeline de CI/CD (GitHub Actions)
+├── files/
+│   ├── clientes.csv                      # Dataset demográfico y económico
+│   ├── marketing.csv                     # Inversión y canales publicitarios
+│   └── ventas.csv                        # Registro transaccional anual
 ├── README.md
-├── requirements.txt
+├── requirements.txt                      # Dependencias del proyecto
 ├── .gitignore
-├── analisis_calidad.py
-├── clase4_informe_analisis_datos.md
-└── datos_ventas_para_auditoria.csv
-~~~
+├── pre_entrega.ipynb                     # Cuaderno principal (Etapas 1 y 2)
+├── app.py                                # Tablero interactivo con Streamlit
+├── analisis_calidad.py                   # Script de análisis exploratorio previo
+├── clase4_informe_analisis_datos.md      # Informe de calidad de la Clase 4
+└── datos_ventas_para_auditoria.csv       # Dataset previo de auditoría
+```
 
-Para visualizar el árbol de archivos desde la terminal, se puede utilizar el siguiente comando:
+---
 
-~~~bash
-tree
-~~~
+## Contenido de la Pre-Entrega (`pre_entrega.ipynb`)
 
-En Windows, si el comando `tree` está disponible, se puede mostrar también el contenido de los archivos con:
+El cuaderno principal consolida dos fases completas de trabajo sobre los datos reales del negocio:
 
-~~~bash
-tree /F
-~~~
+### Etapa 1: Recopilación y Preparación de Datos (Clases 1 a 4)
+* **Actividad 1:** Carga dinámica de los conjuntos de datos en DataFrames de Pandas.
+* **Actividad 2:** Cálculo dinámico de ventas mensuales de todo el año 2024 utilizando variables y operadores de Python nativo (con formato regional argentino `$ 1.234,56`).
+* **Actividad 3:** Programa modular de almacenamiento de transacciones en memoria (`AlmacenVentas`) fundamentando la elección de una **Lista de Diccionarios (`list[dict]`)**.
+* **Actividad 4:** Análisis Exploratorio de Datos (EDA) sobre las 3 fuentes con identificación de métricas de dispersión, tipos y outliers.
+* **Actividad 5:** Auditoría formal de calidad: detección de 35 filas duplicadas y 2 registros nulos en `ventas.csv`.
 
-En macOS o Linux, si el comando `tree` no está instalado, puede instalarse con:
+### Etapa 2: Preprocesamiento y Limpieza de Datos (Clases 5 a 8)
+* **Actividad 1:** Limpieza y depuración: remoción de duplicados (de 3.035 a 2.998 filas limpias), sanitización del caracter `$` en precios y casteo a tipos correctos (`datetime`, `float`, `int`).
+* **Actividad 2:** Identificación de **Productos de Alto Rendimiento** que superan la media de facturación del catálogo.
+* **Actividad 3:** Agregación por categorías de producto y análisis de participación porcentual en los ingresos.
+* **Actividad 4:** Integración de fuentes (`Ventas + Marketing`) mediante un Merge relacional para calcular el retorno publicitario (ROAS / Ratio Ingreso-Costo).
 
-~~~bash
-# macOS
-brew install tree
+---
 
-# Ubuntu o Debian
-sudo apt install tree
-~~~
+## Aplicación Interactiva (Dashboard con Streamlit)
 
-## Análisis realizados
+El proyecto incluye un tablero visual desarrollado en Streamlit (`app.py`), que permite:
+* Consultar la auditoría general de inconsistencias y valores atípicos.
+* Registrar nuevas ventas interactivamente en memoria mediante un formulario web.
+* Visualizar métricas ejecutivas, gráficos de barras por categoría y tablas de retorno sobre la inversión en marketing.
 
-### 1. Primer análisis: calidad de datos
-
-Este documento presenta un análisis exploratorio de la calidad de los datos contenidos en el archivo de ventas.
-
-Se documentan inconsistencias relacionadas con:
-
-- Formatos de fecha.
-- Registros duplicados y problemas con identificadores únicos.
-- Valores faltantes o nulos.
-- Categorías no autorizadas.
-- Métodos de pago desconocidos.
-- Valores atípicos.
-- Diferencias de mayúsculas, minúsculas y espacios.
-- Inconsistencias entre cantidades, precios y totales.
-- Posibles problemas estructurales en el archivo.
-- Diferencias entre el estatus de auditoría y las anomalías encontradas.
-
-El análisis se enfoca exclusivamente en la identificación y documentación de hallazgos, sin aplicar procesos de limpieza o corrección de los datos.
-
-- [Ver informe del primer análisis](./clase4_informe_analisis_datos.md)
-- [Ver archivo de datos analizado](./datos_ventas_para_auditoria.csv)
-
-### 2. Script de análisis
-
-El archivo [Ver archivo de script](./analisis_calidad.py) contiene un análisis reproducible realizado con Python.
-
-El script utiliza las siguientes librerías:
-
-- **Pandas:** lectura, exploración y análisis de los datos.
-- **NumPy:** cálculo de valores atípicos mediante el rango intercuartílico.
-- **Polars:** verificación rápida de la estructura del archivo.
-
-El script no modifica el archivo original. Solo genera indicadores y conteos para respaldar los hallazgos incluidos en el informe.
-
-Para ejecutar el análisis:
-
-~~~bash
-python analisis_calidad.py
-~~~
-
-## Instalación
-
-Se recomienda utilizar un entorno virtual para instalar las dependencias del proyecto.
-
-### Crear el entorno virtual
-
-~~~bash
-python -m venv .venv
-~~~
-
-### Activar el entorno virtual en Windows
-
-~~~bash
-.\.venv\Scripts\activate
-~~~
-
-### Activar el entorno virtual en macOS o Linux
-
-~~~bash
-source .venv/bin/activate
-~~~
-
-### Instalar las dependencias
-
-Las librerías utilizadas se encuentran detalladas en el archivo `requirements.txt`.
-
-Para instalarlas, ejecutar:
-
-~~~bash
-pip install -r requirements.txt
-~~~
-
-Las principales dependencias del proyecto son:
-
-- `pandas`
-- `numpy`
-- `polars`
-
-## Archivos de configuración
-
-El archivo `.gitignore` contiene las reglas para evitar subir al repositorio:
-
-- Entornos virtuales como `.venv/`, `venv/` y `env/`.
-- Archivos temporales de Python.
-- Carpetas de caché.
-- Archivos con variables de entorno.
-- Configuraciones específicas de editores.
-
-## Aplicación interactiva con Streamlit
-
-Como futura etapa del proyecto, se prevé incorporar una aplicación interactiva desarrollada con Streamlit. El objetivo será visualizar los resultados del análisis de calidad de datos mediante métricas, tablas, gráficos y filtros dinámicos.
-
-La aplicación permitirá consultar de forma más visual algunos de los principales hallazgos, como:
-
-- Cantidad total de registros.
-- Identificadores duplicados.
-- Valores faltantes.
-- Categorías no autorizadas.
-- Métodos de pago registrados.
-- Valores atípicos en cantidades y precios.
-- Estado de auditoría de las transacciones.
-
-La aplicación se ejecutará localmente mediante el siguiente comando:
+### Ejecución de la aplicación:
 
 ```bash
 streamlit run app.py
+```
+
+---
+
+## Instalación y Entorno Local
+
+Se recomienda utilizar un entorno virtual para instalar y ejecutar el proyecto.
+
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/francoBa/analisisDatos-TT2026.git
+cd analisisDatos-TT2026
+```
+
+### 2. Crear y activar el entorno virtual
+```bash
+# Crear entorno
+python -m venv .venv
+
+# Activar en Windows
+.\.venv\Scripts\activate
+
+# Activar en macOS o Linux
+source .venv/bin/activate
+```
+
+### 3. Instalar las dependencias
+```bash
+pip install -r requirements.txt
+```
+
+Las dependencias principales incluyen: `pandas`, `numpy`, `streamlit`, `jupyter`, `nbconvert` e `ipykernel`.
+
+---
+
+## Integración Continua (CI/CD)
+
+El repositorio cuenta con un flujo automatizado de pruebas mediante **GitHub Actions** (`.github/workflows/test_notebook.yml`).  
+En cada `push` o `pull request`, una máquina virtual ejecuta de forma desatendida todas las celdas de `pre_entrega.ipynb` para garantizar que el código se mantenga libre de errores y reproducible.
