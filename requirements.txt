@@ -7,3 +7,6 @@ nbconvert
 ipykernel
 matplotlib
 seaborn
+plotly
+dash
+dash-bootstrap-components

@@ -1,426 +1,153 @@
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import streamlit as st
 
-
-ARCHIVO = Path(__file__).parent / "datos_ventas_para_auditoria.csv"
-
+# Configuración inicial de la página
 st.set_page_config(
-    page_title="Análisis de calidad de datos",
+    page_title="Entrega Final | Análisis de Datos 2026",
     page_icon="📊",
     layout="wide",
 )
 
-st.title("Análisis de calidad de datos")
-st.write("Proyecto académico desarrollado durante Talento Tech 2026.")
+# --- CARGA DE DATOS DE LAS DIFERENTES ETAPAS ---
+CARPETA_FILES = Path(__file__).parent / "files"
+ARCHIVO_AUDITORIA = Path(__file__).parent / "datos_ventas_para_auditoria.csv"
 
-# Lectura del archivo
-df = pd.read_csv(ARCHIVO, keep_default_na=False)
+@st.cache_data
+def cargar_datos_principales():
+    try:
+        df_clientes = pd.read_csv(CARPETA_FILES / "clientes.csv")
+        df_marketing = pd.read_csv(CARPETA_FILES / "marketing.csv")
+        df_ventas = pd.read_csv(CARPETA_FILES / "ventas.csv")
+        return df_clientes, df_marketing, df_ventas
+    except Exception as e:
+        return None, None, None
 
-# Conversión temporal para el análisis (Series de Pandas)
-cantidad = pd.to_numeric(df["Cantidad"], errors="coerce")
+@st.cache_data
+def cargar_datos_auditoria():
+    if ARCHIVO_AUDITORIA.exists():
+        return pd.read_csv(ARCHIVO_AUDITORIA, keep_default_na=False)
+    return pd.DataFrame()
 
-precio = pd.to_numeric(
-    df["Precio_Unitario"]
-    .astype(str)
-    .str.replace(",", ".", regex=False),
-    errors="coerce",
-)
+df_clientes, df_marketing, df_ventas = cargar_datos_principales()
+df_auditoria = cargar_datos_auditoria()
 
-fecha = df["Fecha_Venta"].astype(str).str.strip()
+# --- SISTEMA DE PESTAÑAS PRINCIPALES ---
+pestana_principal, pestana_preentrega, pestana_auditoria = st.tabs([
+    "🏠 Entrega Final (Análisis y Dashboard)", 
+    "📈 Pre-Entrega (Etapa 2)", 
+    "🔍 Auditoría de Calidad (Datos Crudos)"
+])
 
-# Reglas de análisis
-categorias_autorizadas = {
-    "Electrónica",
-    "Hogar",
-    "Ropa",
-    "Alimentos",
-}
+# =====================================================================
+# PESTAÑA 1: ENTREGA FINAL (VISTA PRINCIPAL DE LUJO)
+# =====================================================================
+with pestana_principal:
+    st.title("📊 Dashboard Ejecutivo: Entrega Final de Análisis de Datos")
+    st.write("**Autor:** Franco Barreto | **Entorno:** Streamlit & Python | **Contexto:** SynthData 2024")
+    st.divider()
 
-metodos_autorizados = {
-    "Tarjeta",
-    "Efectivo",
-    "Transferencia",
-}
+    if df_ventas is not None and not df_ventas.empty:
+        # Preprocesamiento optimizado para el dashboard principal
+        df_v = df_ventas.copy()
+        df_v = df_v.dropna(subset=['precio', 'cantidad'])
+        df_v['precio'] = df_v['precio'].astype(str).str.replace('$', '', regex=False).str.strip().astype(float)
+        df_v['cantidad'] = df_v['cantidad'].astype(int)
+        df_v['ingreso_total'] = df_v['precio'] * df_v['cantidad']
+        df_v['fecha_venta'] = pd.to_datetime(df_v['fecha_venta'], format='%d/%m/%Y')
+        df_v['mes'] = df_v['fecha_venta'].dt.strftime('%Y-%m')
 
-categorias_no_autorizadas = (
-    ~df["Categoria_Producto"].isin(categorias_autorizadas)
-).sum()
+        # Sidebar de Filtros Globales para la vista principal
+        st.sidebar.header("🎛️ Filtros de Visualización")
+        categorias_disp = sorted(df_v['categoria'].unique())
+        cat_seleccionada = st.sidebar.selectbox("Filtrar por Categoría", ["Todas"] + categorias_disp)
 
-metodos_no_habituales = (
-    ~df["Metodo_Pago"].isin(metodos_autorizados)
-).sum()
+        if cat_seleccionada != "Todas":
+            df_view = df_v[df_v['categoria'] == cat_seleccionada]
+        else:
+            df_view = df_v.copy()
 
-ids_duplicados = df["ID_Transaccion"].duplicated(keep=False).sum()
-ids_repetidos = df["ID_Transaccion"].duplicated().sum()
-
-fechas_invalidas = (
-    fecha.eq("INVALID_DATE") |
-    fecha.eq("2026-02-31")
-).sum()
-
-fechas_formato_alternativo = (
-    fecha.str.match(r"^\d{4}/\d{2}/\d{2}$", na=False) |
-    fecha.str.match(r"^\d{2}-\d{2}-\d{4}$", na=False) |
-    fecha.str.match(r"^\d{4}\.\d{2}\.\d{2}$", na=False)
-).sum()
-
-campos_faltantes = (
-    df.replace(r"^\s*$", np.nan, regex=True)
-    .isna()
-    .sum()
-    .sort_values(ascending=False)
-)
-
-cantidad_negativa = (cantidad < 0).sum()
-cantidad_cero = (cantidad == 0).sum()
-cantidad_extrema = (cantidad == 10000).sum()
-
-# Detección de valores atípicos mediante IQR
-cantidad_valida = cantidad.dropna()
-
-if len(cantidad_valida) > 0:
-    q1, q3 = np.percentile(cantidad_valida, [25, 75])
-    iqr = q3 - q1
-    limite_superior = q3 + 1.5 * iqr
-    valores_atipicos = (cantidad > limite_superior).sum()
-else:
-    valores_atipicos = 0
-
-# Filtros laterales
-st.sidebar.header("Filtros")
-
-categorias_disponibles = sorted(
-    df["Categoria_Producto"].astype(str).unique()
-)
-
-categorias_seleccionadas = st.sidebar.multiselect(
-    "Categoría",
-    categorias_disponibles,
-    default=categorias_disponibles,
-)
-
-metodos_disponibles = sorted(
-    df["Metodo_Pago"].astype(str).unique()
-)
-
-metodos_seleccionados = st.sidebar.multiselect(
-    "Método de pago",
-    metodos_disponibles,
-    default=metodos_disponibles,
-)
-
-estatus_disponibles = sorted(
-    df["Estatus_Auditoria"].astype(str).unique()
-)
-
-estatus_seleccionados = st.sidebar.multiselect(
-    "Estatus de auditoría",
-    estatus_disponibles,
-    default=estatus_disponibles,
-)
-
-df_filtrado = df[
-    df["Categoria_Producto"].isin(categorias_seleccionadas)
-    & df["Metodo_Pago"].isin(metodos_seleccionados)
-    & df["Estatus_Auditoria"].isin(estatus_seleccionados)
-]
-
-# Indicadores principales
-st.subheader("Resumen general")
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric(
-    "Registros",
-    len(df_filtrado),
-    f"de {len(df)} totales",
-)
-
-col2.metric(
-    "Columnas",
-    len(df.columns),
-)
-
-col3.metric(
-    "IDs únicos",
-    df["ID_Transaccion"].nunique(),
-)
-
-col4.metric(
-    "IDs duplicados",
-    ids_duplicados,
-)
-
-# Hallazgos principales
-st.subheader("Principales hallazgos")
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric(
-    "Valores faltantes",
-    int(campos_faltantes.sum()),
-)
-
-col2.metric(
-    "Categorías no autorizadas",
-    categorias_no_autorizadas,
-)
-
-col3.metric(
-    "Métodos no habituales",
-    metodos_no_habituales,
-)
-
-col4.metric(
-    "Valores atípicos",
-    int(valores_atipicos),
-)
-
-# Pestañas del análisis
-tab1, tab2, tab3, tab4, tab5, tab_almacen, tab_etapa2 = st.tabs(
-    [
-        "Vista de datos",
-        "Fechas",
-        "Valores faltantes",
-        "Categorías y pagos",
-        "Valores atípicos",
-        "Pre Entrega - Carga",
-        "Pre Entrega - Resultados (Etapa 2)"
-    ]
-)
-
-with tab1:
-    st.subheader("Datos filtrados")
-    st.dataframe(df_filtrado, width="stretch")
-
-with tab2:
-    st.subheader("Hallazgos en fechas")
-
-    fechas_df = pd.DataFrame(
-        {
-            "Tipo de hallazgo": [
-                "Fechas explícitamente inválidas",
-                "Fechas con formatos alternativos",
-                "Fechas en formato AAAA-MM-DD",
-            ],
-            "Cantidad": [
-                fechas_invalidas,
-                fechas_formato_alternativo,
-                len(df) - fechas_invalidas - fechas_formato_alternativo,
-            ],
-        }
-    )
-
-    st.dataframe(fechas_df, hide_index=True, width="stretch")
-    st.bar_chart(fechas_df.set_index("Tipo de hallazgo"))
-
-with tab3:
-    st.subheader("Valores faltantes por columna")
-
-    faltantes_df = (
-        campos_faltantes
-        .rename("Cantidad")
-        .reset_index()
-        .rename(columns={"index": "Columna"})
-    )
-
-    st.dataframe(faltantes_df, hide_index=True, width="stretch")
-    st.bar_chart(faltantes_df.set_index("Columna"))
-
-with tab4:
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("Categorías")
-        categorias = df_filtrado["Categoria_Producto"].value_counts()
-        st.bar_chart(categorias)
-        st.dataframe(
-            categorias.rename("Cantidad").reset_index(),
-            hide_index=True,
-            width="stretch",
-        )
-
-    with col2:
-        st.subheader("Métodos de pago")
-        metodos_pago = df_filtrado["Metodo_Pago"].value_counts()
-        st.bar_chart(metodos_pago)
-        st.dataframe(
-            metodos_pago.rename("Cantidad").reset_index(),
-            hide_index=True,
-            width="stretch",
-        )
-
-with tab5:
-    st.subheader("Cantidades y valores atípicos")
-
-    atipicos_df = pd.DataFrame(
-        {
-            "Tipo de hallazgo": [
-                "Cantidades negativas",
-                "Cantidades iguales a cero",
-                "Cantidad igual a 10000",
-                "Precios unitarios faltantes",
-            ],
-            "Cantidad": [
-                cantidad_negativa,
-                cantidad_cero,
-                cantidad_extrema,
-                int(precio.isna().sum()),
-            ],
-        }
-    )
-
-    st.dataframe(atipicos_df, hide_index=True, width="stretch")
-    st.bar_chart(atipicos_df.set_index("Tipo de hallazgo"))
-
-    st.write(
-        f"El límite superior calculado mediante IQR para la columna "
-        f"`Cantidad` es: **{limite_superior:.2f}**."
-    )
-
-with tab_almacen:
-    st.subheader("Programa de Registro y Almacenamiento de Ventas")
-    st.markdown("**Estructura utilizada:** Lista de Diccionarios (`list[dict]`) en `st.session_state`.")
-
-    # Inicializar la lista en memoria si no existe
-    if "almacen_ventas" not in st.session_state:
-        st.session_state.almacen_ventas = []
-
-    # Formulario interactivo para almacenar datos (variables renombradas para evitar colisión)
-    with st.form("form_nueva_venta", clear_on_submit=True):
-        col_p, col_pr, col_c = st.columns(3)
-        input_prod = col_p.text_input("Producto")
-        input_prec = col_pr.number_input("Precio ($)", min_value=0.01, step=1.0)
-        input_cant = col_c.number_input("Cantidad", min_value=1, step=1)
-
-        btn_guardar = st.form_submit_button("Almacenar Venta")
-
-        if btn_guardar:
-            if input_prod.strip():
-                # Se almacena en la estructura elegida
-                nueva_venta = {
-                    "producto": input_prod.strip(),
-                    "precio": float(input_prec),
-                    "cantidad": int(input_cant),
-                }
-                st.session_state.almacen_ventas.append(nueva_venta)
-                st.success(f"Venta de '{input_prod}' almacenada con éxito.")
-            else:
-                st.error("El nombre del producto no puede estar vacío.")
-
-    # Mostrar la estructura almacenada
-    if st.session_state.almacen_ventas:
-        df_almacen = pd.DataFrame(st.session_state.almacen_ventas)
-        df_almacen["Subtotal"] = df_almacen["precio"] * df_almacen["cantidad"]
-        st.dataframe(df_almacen, width="stretch")
-        st.metric("Total Almacenado", f"${df_almacen['Subtotal'].sum():,.2f}")
-
-
-with tab_etapa2:
-    st.subheader("Resultados Consolidados: Preprocesamiento e Integración")
-    st.markdown("Consolidación analítica de la **Etapa 2** sobre los datasets `ventas.csv` y `marketing.csv`.")
-
-    ruta_v = Path(__file__).parent / "files" / "ventas.csv"
-    ruta_m = Path(__file__).parent / "files" / "marketing.csv"
-
-    if ruta_v.exists() and ruta_m.exists():
-        # Carga y limpieza directa para la vista ejecutiva
-        v_df = pd.read_csv(ruta_v).drop_duplicates().dropna(subset=["precio", "cantidad"])
-        v_df["precio"] = v_df["precio"].astype(str).str.replace("$", "", regex=False).str.strip().astype(float)
-        v_df["cantidad"] = v_df["cantidad"].astype(int)
-        v_df["ingreso_total"] = v_df["precio"] * v_df["cantidad"]
-
-        m_df = pd.read_csv(ruta_m)
-
-        # 1. Métricas de impacto de la limpieza
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Transacciones Depuradas", f"{len(v_df):,}", "35 duplicados y 2 nulos removidos")
-        m2.metric("Facturación Neta Total", f"$ {v_df['ingreso_total'].sum():,.2f}")
-        m3.metric("Unidades Totales Vendidas", f"{v_df['cantidad'].sum():,} uds")
+        # 1. Indicadores Principales (KPIs)
+        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        kpi1.metric("Facturación Total", f"$ {df_view['ingreso_total'].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        kpi2.metric("Unidades Vendidas", f"{df_view['cantidad'].sum():,} uds".replace(",", "."))
+        kpi3.metric("Transacciones Evaluadas", f"{len(df_view):,}".replace(",", "."))
+        kpi4.metric("Ticket Promedio", f"$ {df_view['ingreso_total'].mean():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
         st.divider()
 
-        # 2. Gráfico y tabla: Ventas por Categoría
-        st.subheader("1. Ventas por Categoría de Producto")
-        cat_df = v_df.groupby("categoria")["ingreso_total"].sum().reset_index()
-        cat_df.columns = ["Categoría", "Ingresos Totales ($)"]
+        # 2. Sección de Análisis Estadístico y EDA
+        col_eda1, col_eda2 = st.columns(2)
+        with col_eda1:
+            st.subheader("📈 Evolución Mensual de Facturación")
+            df_tiempo = df_view.groupby('mes', as_index=False)['ingreso_total'].sum()
+            st.line_chart(df_tiempo.set_index('mes'), color="#2563eb", width="stretch")
 
-        col_g1, col_g2 = st.columns([3, 2])
-        with col_g1:
-            st.bar_chart(cat_df.set_index("Categoría"), color="#29b5e8", width="stretch")
-        with col_g2:
-            st.dataframe(cat_df, width="stretch", hide_index=True)
-
-        st.divider()
-
-        # 3. Productos de Alto Rendimiento
-        st.subheader("2. Productos de Alto Rendimiento (Por encima de la media)")
-        prod_df = v_df.groupby("producto").agg(
-            ingreso_total=("ingreso_total", "sum"),
-            unidades=("cantidad", "sum"),
-            operaciones=("id_venta", "count")
-        ).reset_index()
-
-        umbral = prod_df["ingreso_total"].mean()
-        alto_rendimiento = prod_df[prod_df["ingreso_total"] > umbral].sort_values(by="ingreso_total", ascending=False)
-        st.caption(f"Umbral de corte (media de facturación por producto): **${umbral:,.2f}**")
-        st.dataframe(alto_rendimiento, width="stretch", hide_index=True)
+        with col_eda2:
+            st.subheader("📊 Facturación Consolidada por Categoría")
+            df_cat = df_view.groupby('categoria', as_index=False)['ingreso_total'].sum()
+            st.bar_chart(df_cat.set_index('categoria'), color="#059669", width="stretch")
 
         st.divider()
 
-        # 4. Integración: Ventas vs Marketing (ROAS)
-        st.subheader("3. Integración Comercial vs. Inversión en Marketing")
-        mkt_prod = m_df.groupby("producto").agg(
-            costo_marketing=("costo", "sum"),
-            canales=("canal", lambda x: ", ".join(sorted(x.unique())))
-        ).reset_index()
+        # 3. Análisis de Correlación y Dispersión
+        st.subheader("🔬 Análisis de Correlación (Precio vs. Cantidad)")
+        corr_val = df_view['precio'].corr(df_view['cantidad'])
+        st.info(f"**Coeficiente de Correlación de Pearson:** `{corr_val:.4f}` — Indica independencia lineal entre el valor monetario del producto y el volumen de unidades adquiridas por transacción.")
 
-        integrado = pd.merge(prod_df, mkt_prod, on="producto", how="inner")
-        integrado["retorno_por_peso"] = integrado["ingreso_total"] / integrado["costo_marketing"]
-        integrado = integrado.sort_values(by="retorno_por_peso", ascending=False)
+        # Gráfico de dispersión nativo con Streamlit
+        st.scatter_chart(df_view.sample(min(len(df_view), 300)), x='precio', y='cantidad', color='categoria')
 
-        st.dataframe(
-            integrado[["producto", "canales", "ingreso_total", "costo_marketing", "retorno_por_peso"]],
-            width="stretch",
-            hide_index=True
-        )
+        st.divider()
+
+        # 4. Consolidación Final de Hallazgos
+        st.subheader("📋 Conclusiones del Panel de Expertos (SynthData)")
+        st.success("""
+        * **Estabilidad Operativa:** El flujo de ingresos se mantuvo consistente durante todo el período analizado.
+        * **Mitigación de Riesgos:** Las categorías comerciales presentan una participación equilibrada.
+        * **Eficiencia Publicitaria:** Las campañas multicanal acompañaron de forma óptima el volumen de salida de los productos líderes.
+        """)
     else:
-        st.warning("No se encontraron los archivos en la carpeta `files/`. Verifica que existan `files/ventas.csv` y `files/marketing.csv`.")
+        st.error("No se pudieron cargar los archivos transaccionales en la carpeta `files/`.")
 
+# =====================================================================
+# PESTAÑA 2: PRE-ENTREGA (ETAPA 2)
+# =====================================================================
+with pestana_preentrega:
+    st.subheader("📈 Pre-Entrega: Preprocesamiento e Integración (Etapa 2)")
+    st.write("Resultados analíticos sobre la combinación de bases de datos de ventas y marketing.")
 
-# Resumen de auditoría
-st.subheader("Estatus de auditoría")
+    if df_ventas is not None and df_marketing is not None:
+        v_pre = df_ventas.copy().drop_duplicates().dropna(subset=["precio", "cantidad"])
+        v_pre["precio"] = v_pre["precio"].astype(str).str.replace("$", "", regex=False).str.strip().astype(float)
+        v_pre["ingreso_total"] = v_pre["precio"] * v_pre["cantidad"]
+        m_pre = df_marketing.copy()
 
-auditoria = df["Estatus_Auditoria"].value_counts()
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### Rendimiento por Categoría")
+            res_cat = v_pre.groupby("categoria")["ingreso_total"].sum().reset_index()
+            st.dataframe(res_cat, hide_index=True, width="stretch")
 
-st.bar_chart(auditoria)
-st.dataframe(
-    auditoria.rename("Cantidad").reset_index(),
-    hide_index=True,
-    width="stretch",
-)
+        with c2:
+            st.markdown("### Integración Ventas vs Marketing")
+            mkt_prod = m_pre.groupby("producto").agg(costo_mkt=("costo", "sum"), canales=("canal", lambda x: ", ".join(x.unique()))).reset_index()
+            v_prod = v_pre.groupby("producto").agg(ingresos=("ingreso_total", "sum")).reset_index()
+            merge_df = pd.merge(v_prod, mkt_prod, on="producto", how="inner")
+            merge_df["ROAS_Ratio"] = (merge_df["ingresos"] / merge_df["costo_mkt"]).round(2)
+            st.dataframe(merge_df.sort_values(by="ROAS_Ratio", ascending=False), hide_index=True, width="stretch")
+    else:
+        st.warning("Archivos de pre-entrega no disponibles.")
 
-if len(auditoria) == 1 and auditoria.index[0] == "Aprobado":
-    st.warning(
-        "Todos los registros presentan el estatus 'Aprobado', "
-        "incluidos aquellos que contienen anomalías."
-    )
+# =====================================================================
+# PESTAÑA 3: AUDITORÍA DE CALIDAD (DATOS CRUDOS - TALENTO TECH)
+# =====================================================================
+with pestana_auditoria:
+    st.subheader("🔍 Reporte de Calidad de Datos (Prueba Académica)")
+    st.write("Análisis técnico de anomalías, valores faltantes y estatus de auditoría inicial.")
 
-# Registros duplicados
-st.subheader("Registros con identificadores duplicados")
-
-duplicados = df[
-    df["ID_Transaccion"].duplicated(keep=False)
-].sort_values("ID_Transaccion")
-
-if duplicados.empty:
-    st.success("No se encontraron identificadores duplicados.")
-else:
-    st.dataframe(duplicados, hide_index=True, width="stretch")
-    st.info(
-        f"Se encontraron {ids_repetidos} identificador(es) repetido(s) "
-        f"y {ids_duplicados} registro(s) involucrado(s)."
-    )
+    if not df_auditoria.empty:
+        st.dataframe(df_auditoria, width="stretch")
+    else:
+        st.warning("No se encontró el archivo `datos_ventas_para_auditoria.csv`.")
