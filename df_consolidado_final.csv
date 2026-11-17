@@ -1,0 +1,31 @@
+producto,categoria,precio_promedio,operaciones,ticket_promedio,ingreso_generado,unidades_vendidas,costo_marketing_total,canales_utilizados,cantidad_campanhas,relacion_ingreso_costo,nivel_rendimiento
+Lámpara de mesa,Decoración,72.720625,176,467.47943181818187,82276.38,1112,15.93,"Email, RRSS, TV",3,5164.870056497176,Alto Rendimiento
+Auriculares,Electrónica,76.30272727272728,143,518.7103496503497,74175.58,958,15.24,"Email, RRSS, TV",3,4867.164041994751,Alto Rendimiento
+Microondas,Electrodomésticos,79.176,135,537.5028888888888,72562.89,912,14.190000000000001,"Email, RRSS, TV",3,5113.663847780126,Alto Rendimiento
+Cafetera,Electrodomésticos,79.0465811965812,117,509.464188034188,59607.31,765,18.16,"Email, RRSS, TV",3,3282.340859030837,Alto Rendimiento
+Cuadro decorativo,Decoración,74.578,100,542.976,54297.6,726,15.85,"Email, RRSS, TV",3,3425.716088328076,Alto Rendimiento
+Smartphone,Electrónica,81.39841584158415,101,535.9647524752476,54132.44,665,15.8,"Email, RRSS, TV",3,3426.1037974683545,Alto Rendimiento
+Secadora,Electrodomésticos,73.33890000000001,100,521.1545,52115.45,696,14.59,"Email, RRSS, TV",3,3571.997943797121,Alto Rendimiento
+Jarrón decorativo,Decoración,74.53399999999999,100,511.30879999999996,51130.88,672,13.27,"Email, RRSS, TV",3,3853.118311981914,Alto Rendimiento
+Batidora,Electrodomésticos,77.5372,100,509.792,50979.2,672,15.280000000000001,"Email, RRSS, TV",3,3336.335078534031,Alto Rendimiento
+Rincón de plantas,Decoración,74.82386138613862,101,499.5688118811881,50456.45,691,16.45,"Email, RRSS, TV",3,3067.2613981762916,Alto Rendimiento
+Freidora eléctrica,Electrodomésticos,78.2513,100,501.55150000000003,50155.15,630,13.559999999999999,"Email, RRSS, TV",3,3698.7573746312687,Alto Rendimiento
+Aspiradora,Electrodomésticos,77.4474,100,500.8586,50085.86,651,16.46,"Email, RRSS, TV",3,3042.883353584447,Alto Rendimiento
+Horno eléctrico,Electrodomésticos,75.6888,100,499.139,49913.9,633,13.89,"Email, RRSS, TV",3,3593.513318934485,Alto Rendimiento
+Lavadora,Electrodomésticos,74.9534,100,489.4644,48946.44,671,11.85,"Email, RRSS, TV",3,4130.501265822785,Alto Rendimiento
+Proyector,Electrónica,74.68040404040404,99,486.73737373737373,48187.0,626,12.47,"Email, RRSS, TV",3,3864.234161988773,Rendimiento Estándar
+Adorno de pared,Decoración,76.09779999999999,100,480.93489999999997,48093.49,633,14.05,"Email, RRSS, TV",3,3423.024199288256,Rendimiento Estándar
+SmartWatch,Electrónica,75.5358,100,478.3686,47836.86,620,14.5,"Email, RRSS, TV",3,3299.093793103448,Rendimiento Estándar
+Parlantes Bluetooth,Electrónica,73.58357142857142,98,487.5455102040816,47779.46,660,13.370000000000001,"Email, RRSS, TV",3,3573.63201196709,Rendimiento Estándar
+Televisor,Electrónica,73.8153,100,470.3804,47038.04,632,13.13,"Email, RRSS, TV",3,3582.485910129474,Rendimiento Estándar
+Espejo decorativo,Decoración,75.66329999999999,100,467.8331,46783.31,635,14.89,"Email, RRSS, TV",3,3141.9281396910674,Rendimiento Estándar
+Laptop,Electrónica,75.3262,100,461.7948,46179.48,617,15.19,"Email, RRSS, TV",3,3040.123765635287,Rendimiento Estándar
+Consola de videojuegos,Electrónica,76.34686868686869,99,466.4081818181818,46174.409999999996,623,12.77,"Email, RRSS, TV",3,3615.8504306969458,Rendimiento Estándar
+Elementos de cerámica,Decoración,71.61151515151515,99,458.6978787878788,45411.09,636,16.87,"Email, RRSS, TV",3,2691.825133372851,Rendimiento Estándar
+Cámara digital,Electrónica,72.0107,100,452.1796,45217.96,638,16.4,"Email, RRSS, TV",3,2757.1926829268295,Rendimiento Estándar
+Plancha de vapor,Electrodomésticos,73.0392,100,451.9663,45196.63,632,14.120000000000001,"Email, RRSS, TV",3,3200.8944759206793,Rendimiento Estándar
+Cortinas,Decoración,73.6499,100,448.6503,44865.03,610,17.36,"Email, RRSS, TV",3,2584.391129032258,Rendimiento Estándar
+Alfombra,Decoración,74.0983,100,447.7306,44773.06,615,17.46,"Email, RRSS, TV",3,2564.3218785796103,Rendimiento Estándar
+Tablet,Electrónica,71.38258620689655,58,445.80293103448275,25856.57,374,12.72,"Email, RRSS, TV",3,2032.7492138364778,Rendimiento Estándar
+Heladera,Electrodomésticos,74.12770833333333,48,536.1833333333333,25736.8,330,13.11,"Email, RRSS, TV",3,1963.1426392067124,Rendimiento Estándar
+Candelabro,Decoración,74.59541666666667,24,463.70000000000005,11128.800000000001,160,14.65,"Email, RRSS, TV",3,759.6450511945393,Rendimiento Estándar
